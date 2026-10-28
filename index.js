@@ -1,81 +1,74 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const sequelize = require('./config/db');
+const { sequelize } = require('./models');
+const seedDatabase = require('./seeders/seed');
 
-// Importar Modelos para que Sequelize los registre
-const Producto = require('./models/Producto');
+// Importar Rutas Modulares
+const authRoutes = require('./routes/authRoutes');
+const productoRoutes = require('./routes/productoRoutes');
+const categoriaRoutes = require('./routes/categoriaRoutes');
+const proveedorRoutes = require('./routes/proveedorRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const movimientoRoutes = require('./routes/movimientoRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
 // --- MIDDLEWARES ---
-// Habilitar CORS para permitir peticiones desde el frontend (React)
 app.use(cors());
-// Parsear el body de las peticiones a JSON
 app.use(express.json());
 
-// --- RUTAS BÁSICAS DE PRUEBA ---
+// Ruta de estado / bienvenida
 app.get('/', (req, res) => {
-    res.send('¡API Backend funcionando exitosamente!');
+    res.json({
+        mensaje: 'API SENATI - Sistema Administrativo de Inventario funcionando exitosamente',
+        version: '2.1.0 (Con Autenticación y Encriptación Bcrypt)',
+        endpoints: [
+            '/api/auth/login',
+            '/api/dashboard/stats',
+            '/api/productos',
+            '/api/categorias',
+            '/api/proveedores',
+            '/api/usuarios',
+            '/api/movimientos'
+        ]
+    });
 });
 
-// --- RUTAS CRUD PARA PRODUCTOS ---
+// --- REGISTRO DE RUTAS ---
+app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
-// 1. POST: Crear un nuevo producto (Hace funcionar el botón Guardar)
-app.post('/productos', async (req, res) => {
-    try {
-        const nuevoProducto = await Producto.create(req.body);
-        res.json(nuevoProducto);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+app.use('/productos', productoRoutes);
+app.use('/api/productos', productoRoutes);
 
-// 2. GET: Obtener todos los productos (Hace funcionar la Lista de Productos)
-app.get('/productos', async (req, res) => {
-    try {
-        const productos = await Producto.findAll();
-        res.json(productos);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+app.use('/categorias', categoriaRoutes);
+app.use('/api/categorias', categoriaRoutes);
 
-// 3. PUT: Actualizar un producto existente (Hace funcionar el botón Editar)
-app.put('/productos/:id', async (req, res) => {
-    try {
-        await Producto.update(req.body, {
-            where: { id: req.params.id }
-        });
-        res.json({ message: 'Producto actualizado' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+app.use('/proveedores', proveedorRoutes);
+app.use('/api/proveedores', proveedorRoutes);
 
-// 4. DELETE: Eliminar un producto (Hace funcionar el botón Eliminar)
-app.delete('/productos/:id', async (req, res) => {
-    try {
-        await Producto.destroy({
-            where: { id: req.params.id }
-        });
-        res.json({ message: 'Producto eliminado' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+app.use('/usuarios', usuarioRoutes);
+app.use('/api/usuarios', usuarioRoutes);
+
+app.use('/movimientos', movimientoRoutes);
+app.use('/api/movimientos', movimientoRoutes);
+
+app.use('/dashboard', dashboardRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // --- SINCRONIZACIÓN Y ARRANQUE ---
 const PORT = process.env.PORT || 3006;
 
-// force: false evita que se borren los datos cada vez que se reinicia el servidor
-sequelize.sync({ force: false })
-    .then(() => {
-        console.log('Base de datos conectada y sincronizada.');
+sequelize.sync({ alter: true })
+    .then(async () => {
+        console.log('✅ Base de datos conectada y modelos sincronizados con éxito.');
+        await seedDatabase();
         app.listen(PORT, () => {
-            console.log(`Servidor corriendo en http://localhost:${PORT}`);
+            console.log('🚀 Servidor backend corriendo en http://localhost:' + PORT);
         });
     })
     .catch(error => {
-        console.error('Error al conectar con la base de datos:', error);
+        console.error('❌ Error al conectar con la base de datos:', error);
     });
