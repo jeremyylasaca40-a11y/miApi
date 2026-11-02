@@ -13,7 +13,7 @@ module.exports = (rolesPermitidos = []) => {
 
         try {
             // Verificar autenticidad y expiración
-            const decodificado = jwt.verify(token, process.env.JWT_SECRET);
+            const decodificado = jwt.verify(token, process.env.JWT_SECRET || '@senati2026@');
             req.usuario = decodificado; // Adjunta la información del usuario a la petición
 
             // Validar si el rol es suficiente (RBAC - Control de acceso basado en roles)
