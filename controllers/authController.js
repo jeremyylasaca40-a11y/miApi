@@ -1,4 +1,5 @@
-﻿const { Usuario } = require('../models');
+const { Usuario } = require('../models');
+const jwt = require('jsonwebtoken');
 
 exports.login = async (req, res) => {
     try {
@@ -10,7 +11,7 @@ exports.login = async (req, res) => {
 
         const usuario = await Usuario.findOne({ where: { email } });
         if (!usuario) {
-            return res.status(401).json({ error: 'Credenciales inválidas (usuario no encontrado)' });
+            return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
         if (!usuario.estado) {
@@ -19,14 +20,22 @@ exports.login = async (req, res) => {
 
         const esValido = await usuario.validPassword(password);
         if (!esValido) {
-            return res.status(401).json({ error: 'Contraseña incorrecta. Verifica tus datos' });
+            return res.status(401).json({ error: 'Credenciales inválidas' });
         }
+
+        // Generar JWT
+        const token = jwt.sign(
+            { id: usuario.id, rol: usuario.rol },
+            process.env.JWT_SECRET || '@senati2026@',
+            { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
+        );
 
         const userJson = usuario.toJSON();
         delete userJson.password;
 
         res.json({
-            message: 'Autenticación exitosa',
+            message: 'Inicio de sesión exitoso',
+            token,
             usuario: userJson
         });
     } catch (error) {
@@ -49,17 +58,25 @@ exports.register = async (req, res) => {
         const nuevo = await Usuario.create({
             nombre,
             email,
-            password, // se encriptará automáticamente con bcrypt en beforeSave
+            password,
             rol: rol || 'Almacenero',
             estado: true
         });
+
+        const token = jwt.sign(
+            { id: nuevo.id, rol: nuevo.rol },
+            process.env.JWT_SECRET || '@senati2026@',
+            { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
+        );
 
         const resp = nuevo.toJSON();
         delete resp.password;
 
         res.status(201).json({
             message: 'Usuario registrado exitosamente',
-            usuario: resp
+            token,
+            usuario: resp,
+            id: nuevo.id
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

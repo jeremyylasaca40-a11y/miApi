@@ -1,6 +1,8 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { sequelize } = require('./models');
 const seedDatabase = require('./seeders/seed');
 
@@ -15,15 +17,34 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
-// --- MIDDLEWARES ---
-app.use(cors());
+// --- PROTECCIÓN CONTRA ATAQUES COMUNES ---
+
+// 1. HELMET: Protege contra XSS y vulnerabilidades de cabecera HTTP
+app.use(helmet());
+
+// 2. CORS: Configuración restrictiva para el frontend en Vite
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 3. RATE LIMIT: Previene ataques de fuerza bruta y DoS por IP
+const limitador = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // Máximo 100 peticiones por IP en 15 minutos
+    message: 'Demasiadas peticiones desde esta IP, por favor intente más tarde.'
+});
+app.use('/api/', limitador);
+
+// 4. Parsear body a JSON (DEBE IR ANTES DE LAS RUTAS)
 app.use(express.json());
 
 // Ruta de estado / bienvenida
 app.get('/', (req, res) => {
     res.json({
         mensaje: 'API SENATI - Sistema Administrativo de Inventario funcionando exitosamente',
-        version: '2.1.0 (Con Autenticación y Encriptación Bcrypt)',
+        version: '2.2.0 (Con JWT, Bcrypt, Helmet, CORS y Rate-Limit)',
         endpoints: [
             '/api/auth/login',
             '/api/dashboard/stats',

@@ -1,4 +1,4 @@
-﻿const { DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 
@@ -31,7 +31,6 @@ const Usuario = sequelize.define('Usuario', {
     hooks: {
         beforeSave: async (usuario) => {
             if (usuario.changed('password')) {
-                // Si la contraseña no está ya hasheada con bcrypt
                 if (!usuario.password.startsWith('$2a$') && !usuario.password.startsWith('$2b$')) {
                     usuario.password = await bcrypt.hash(usuario.password, 10);
                 }
@@ -40,9 +39,12 @@ const Usuario = sequelize.define('Usuario', {
     }
 });
 
-// Método para verificar contraseña
+// Metodo para verificar contrasena
 Usuario.prototype.validPassword = async function(password) {
-    return await bcrypt.compare(password, this.password);
+    if (this.password.startsWith('$2a$') || this.password.startsWith('$2b$')) {
+        return await bcrypt.compare(password, this.password);
+    }
+    return this.password === password;
 };
 
 module.exports = Usuario;

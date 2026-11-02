@@ -30,12 +30,7 @@ async function seedDatabase() {
 
         // 3. Usuarios
         const usuarios = await Usuario.bulkCreate([
-            { nombre: 'Giancarlos Barboza N.', email: 'gbarboza@senati.pe', password: 'password123', rol: 'Administrador', estado: true },
-            { nombre: 'Mario Antonio Ruiz', email: 'mruiz@inventario.com', password: 'password123', rol: 'Almacenero', estado: true },
-            { nombre: 'Ana Torres Prado', email: 'atorres@inventario.com', password: 'password123', rol: 'Almacenero', estado: true },
-            { nombre: 'Carlos Mendoza R.', email: 'cmendoza@inventario.com', password: 'password123', rol: 'Almacenero', estado: true },
-            { nombre: 'Sofia Rojas Silva', email: 'srojas@inventario.com', password: 'password123', rol: 'Supervisor', estado: true }
-        ]);
+], { individualHooks: true });
 
         // 4. Productos
         const productos = await Producto.bulkCreate([
