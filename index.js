@@ -33,7 +33,7 @@ app.use(cors({
 // 3. RATE LIMIT: Previene ataques de fuerza bruta y DoS por IP
 const limitador = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // Máximo 100 peticiones por IP en 15 minutos
+    max: process.env.NODE_ENV === 'production' ? 100 : 2000, // 2000 peticiones en desarrollo para pruebas fluidas
     message: 'Demasiadas peticiones desde esta IP, por favor intente más tarde.'
 });
 app.use('/api/', limitador);
@@ -83,9 +83,9 @@ app.use('/api/dashboard', dashboardRoutes);
 // --- SINCRONIZACIÓN Y ARRANQUE ---
 const PORT = process.env.PORT || 3006;
 
-sequelize.sync({ alter: true })
+sequelize.authenticate()
     .then(async () => {
-        console.log('✅ Base de datos conectada y modelos sincronizados con éxito.');
+        console.log('✅ Base de datos conectada exitosamente.');
         await seedDatabase();
         app.listen(PORT, () => {
             console.log('🚀 Servidor backend corriendo en http://localhost:' + PORT);
