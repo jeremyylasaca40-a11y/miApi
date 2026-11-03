@@ -168,6 +168,9 @@ exports.createMultiple = async (req, res) => {
             // Descontar stock
             await producto.update({ stock: nuevoStock }, { transaction: t });
 
+            const stockMinimo = producto.stock_minimo || 5;
+            const quedoCritico = nuevoStock <= stockMinimo;
+
             resumenItems.push({
                 producto_id: producto.id,
                 nombre: producto.nombre,
@@ -175,6 +178,8 @@ exports.createMultiple = async (req, res) => {
                 cantidad: cant,
                 stock_anterior: producto.stock,
                 nuevo_stock: nuevoStock,
+                stock_minimo: stockMinimo,
+                quedo_critico: quedoCritico,
                 subtotal: (parseFloat(producto.precio) * cant).toFixed(2)
             });
         }
@@ -188,6 +193,7 @@ exports.createMultiple = async (req, res) => {
             destinatario: destinatario || 'General',
             observaciones: observaciones || '',
             items: resumenItems,
+            articulos_criticos: resumenItems.filter(it => it.quedo_critico),
             total_items: resumenItems.reduce((acc, it) => acc + it.cantidad, 0),
             total_valor: resumenItems.reduce((acc, it) => acc + parseFloat(it.subtotal), 0).toFixed(2)
         });
