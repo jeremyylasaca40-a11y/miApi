@@ -25,7 +25,7 @@ app.use(helmet());
 
 // 2. CORS: Configuración restrictiva para el frontend en Vite
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
